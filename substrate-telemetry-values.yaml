@@ -1,0 +1,213 @@
+# Default values for substrate-telemtry.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+
+replicaCount:
+  # NOTE: The core service is not scalable at the moment.
+  shard: 1
+  core: 1
+  frontend: 1
+
+image:
+  backend:
+    repository: docker.io/parity/substrate-telemetry-backend
+    pullPolicy: IfNotPresent
+    # Overrides the image tag whose default is the chart appVersion.
+    tag: latest
+  frontend:
+    repository: docker.io/parity/substrate-telemetry-frontend
+    pullPolicy: IfNotPresent
+    # Overrides the image tag whose default is the chart appVersion.
+    tag: latest
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+envVars:
+  shard: {}
+  core: {}
+  frontend:
+    # The frontend docker container makes this available to the UI,
+    # so that it knows where to look for feed information:
+    SUBSTRATE_TELEMETRY_URL: "wss://core-service-domain.com"
+
+serviceMonitor:
+  # Only core service has Prometheus metrics exposed at the moment.
+  core:
+    enabled: true
+    interval: "10s"
+    additionalLabels: {}
+    annotations: {}
+    # scrapeTimeout: 10s
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: false
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+service:
+  shard:
+    type: ClusterIP
+    port: 80
+    targetPort: 8000
+    annotations: {}
+    # nodePort: 31000
+    # externalTrafficPolicy: Cluster 
+    # sessionAffinity: None
+  core:
+    type: ClusterIP
+    port: 80
+    targetPort: 8000
+    annotations: {}
+    # nodePort: 31000
+    # externalTrafficPolicy: Cluster 
+    # sessionAffinity: None
+  frontend:
+    type: ClusterIP
+    port: 80
+    targetPort: 8000
+    annotations: {}
+    # nodePort: 31000
+    # externalTrafficPolicy: Cluster 
+    # sessionAffinity: None
+
+ingress:
+  shard:
+    enabled: false
+    className: ""
+    annotations: {}
+    rules:
+      - host: shard.example.local
+        http:
+          paths:
+          - backend:
+              service:
+                name: telemetry-shard
+                port:
+                  number: 80
+            path: /submit
+            pathType: Exact
+          - backend:
+              service:
+                name: telemetry-shard
+                port:
+                  number: 80
+            path: /submit/
+            pathType: Exact
+    tls:
+      - secretName: shard.example.local
+        hosts:
+          - shard.example.local
+  core:
+    enabled: false
+    className: ""
+    annotations: {}
+    rules:
+      - host: feed.example.local
+        http:
+          paths:
+          - backend:
+              service:
+                name: telemetry-core
+                port:
+                  number: 80
+            path: /feed
+            pathType: Exact
+          - backend:
+              service:
+                name: telemetry-core
+                port:
+                  number: 80
+            path: /feed/
+            pathType: Exact
+    tls:
+      - secretName: feed.example.local
+        hosts:
+          - feed.example.local
+  frontend:
+    enabled: false
+    className: ""
+    annotations:
+    rules:
+      - host: example.local
+        http:
+          paths:
+          - backend:
+              service:
+                name: telemetry-frontend
+                port:
+                  number: 80
+            path: /
+            pathType: Prefix
+    tls:
+      - secretName: example.local
+        hosts:
+          - example.local
+
+
+resources:
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  frontend: {}
+  #  limits:
+  #    cpu: 100m
+  #    memory: 128Mi
+  #  requests:
+  #    cpu: 100m
+  #    memory: 128Mi
+  shard: {}
+  #  limits:
+  #    cpu: 100m
+  #    memory: 128Mi
+  #  requests:
+  #    cpu: 100m
+  #    memory: 128Mi
+  core: {}
+  #  limits:
+  #    cpu: 100m
+  #    memory: 128Mi
+  #  requests:
+  #    cpu: 100m
+  #    memory: 128Mi
+
+autoscaling:
+  # NOTE: The core service is not scalable at the moment.
+  shard:
+    enabled: false
+    minReplicas: 2
+    maxReplicas: 6
+    targetCPUUtilizationPercentage: 80
+    # targetMemoryUtilizationPercentage: 80
+  frontend:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 6
+    targetCPUUtilizationPercentage: 80
+    # targetMemoryUtilizationPercentage: 80
+  core:
+    enabled: false
+
+nodeSelector: {}
+affinity: {}
+tolerations: []

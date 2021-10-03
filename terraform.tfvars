@@ -1,0 +1,8 @@
+project_id = "redacted"
+cluster_name = "redacted"
+region = "redacted"
+network = "redacted"
+subnetwork = "redacted"
+ip_range_pods_name = "redacted"
+ip_range_services_name = "redacted"
+gcp-nodepool-service-account  = "redacted"

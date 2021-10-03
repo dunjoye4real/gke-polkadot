@@ -1,0 +1,110 @@
+image:
+  repository: parity/polkadot
+  tag: latest
+  pullPolicy: Always
+
+initContainer:
+  image:
+    repository: crazymax/7zip
+    tag: latest
+
+googleCloudSdk:
+  image:
+    repository: google/cloud-sdk
+    tag: slim # more lightweight than the full image and still contains gsutil
+  #serviceAccountKey: ""
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+podSecurityContext:
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
+
+ingress:
+  enabled: false
+  annotations: {}
+  #  kubernetes.io/ingress.class: nginx
+  #  kubernetes.io/tls-acme: "true"
+  rules: []
+  #  - host: chart-example.local
+  #    paths:
+  #      - serviceName: node
+  #        servicePort: 9944
+  tls: []
+  #  - secretName: chart-example-tls
+  #    hosts:
+  #      - chart-example.local
+
+node:
+  chain: "kusama"
+  command: "kusama"
+  dataVolumeSize: 100Gi
+  replicas: 1
+  role: full
+  #chainDataSnapshotUrl: ""
+  chainDataSnapshotExtractionPath: "/data/chains/${CHAIN_PATH}"
+  chainDataSnapshotFormat: tar
+  #chainPath: ""
+  #chainDataKubernetesVolumeSnapshot: ""
+  #chainDataGcsBucketUrl: ""
+  enableStartupProbe: true
+  enableReadinessProbe: true
+  flags:
+    - "--prometheus-external"
+    - "--rpc-external"
+    - "--ws-external"
+    - "--rpc-cors=all"
+  keys: {}
+  #  - type: "gran"
+  #    scheme: "ed25519"
+  #    seed: "//Alice//gran"
+  #  - type: "babe"
+  #    scheme: "sr25519"
+  #    seed: "//Alice//babe"
+  persistGeneratedNodeKey: false
+  resources: {}
+  serviceMonitor:
+    enabled: true
+    namespace: monitoring
+    interval: 10s
+    scrapeTimeout: 10s
+  perNodeServices:
+    createClusterIPService: true
+    createP2pNodePortService: false
+    p2pNodePortStartRange: "30000"
+    # Set to 0.0.0.0 to enable auto discovery of the IP address
+    listenAddressBase: "/ip4/0.0.0.0/tcp/"
+  #podManagementPolicy: Parallel
+  #customChainspecUrl:
+
+substrateApiSidecar:
+  enabled: false
+  image:
+    repository: parity/substrate-api-sidecar
+    tag: latest
+  env: {}
+  resources: {}
+
+podAnnotations: {}
+
+nodeSelector: {}
+
+terminationGracePeriodSeconds: 60
+
+tolerations: []
+
+affinity: {}
+
+storageClass: "standard"

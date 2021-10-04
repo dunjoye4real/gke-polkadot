@@ -1,0 +1,133 @@
+image:
+  repository: parity/polkadot
+  tag: latest
+  pullPolicy: Always
+
+initContainer:
+  image:
+    repository: crazymax/7zip
+    tag: latest
+
+googleCloudSdk:
+  image:
+    repository: google/cloud-sdk
+    tag: slim # more lightweight than the full image and still contains gsutil
+  #serviceAccountKey: ""
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+podSecurityContext:
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
+
+ingress:
+  enabled: true
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/proxy-http-version: "1.1"
+    nginx.ingress.kubernetes.io/proxy-buffering: "off"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+    nginx.ingress.kubernetes.io/connection-proxy-header: "Upgrade"
+    nginx.ingress.kubernetes.io/x-forwarded-prefix: "/"
+    nginx.ingress.kubernetes.io/server-snippets: |
+      proxy_set_header Upgrade $http_upgrade;
+  #  kubernetes.io/tls-acme: "true"
+  rules:
+  - host: node.testchain.com
+    http:
+      paths:
+      - path: /node
+        pathType: Prefix
+        backend:
+          service:
+            name: polkadot-node-0
+            port:
+              number: 9944
+      - path: /metrics
+        pathType: Prefix
+        backend: 
+          service:
+            name: polkadot-node-0
+            port:
+              number: 9615       
+  tls:
+   - secretName: chart-tls
+     hosts:
+       - node.testchain.com
+
+node:
+  chain: "polkadot"
+  command: "polkadot"
+  dataVolumeSize: 50Gi
+  replicas: 1
+  role: full
+  #chainDataSnapshotUrl: ""
+  chainDataSnapshotExtractionPath: "/data/chains/${CHAIN_PATH}"
+  chainDataSnapshotFormat: tar
+  #chainPath: ""
+  #chainDataKubernetesVolumeSnapshot: ""
+  #chainDataGcsBucketUrl: ""
+  enableStartupProbe: true
+  enableReadinessProbe: true
+  # add custom telemetry flag with --telemetry-url=ws://<telemetry ingress>/submit 0
+  flags:
+    - "--prometheus-external"
+    - "--rpc-external"
+    - "--ws-external"
+    - "--rpc-cors=all"
+    - "--telemetry-url=ws://34.141.24.67/submit 0"
+  keys: {}
+  #  - type: "gran"
+  #    scheme: "ed25519"
+  #    seed: "//Alice//gran"
+  #  - type: "babe"
+  #    scheme: "sr25519"
+  #    seed: "//Alice//babe"
+  persistGeneratedNodeKey: false
+  resources: {}
+  serviceMonitor:
+    enabled: true
+    namespace: monitoring
+    interval: 10s
+    scrapeTimeout: 10s
+  perNodeServices:
+    createClusterIPService: true
+    createP2pNodePortService: false
+    p2pNodePortStartRange: "30000"
+    # Set to 0.0.0.0 to enable auto discovery of the IP address
+    listenAddressBase: "/ip4/0.0.0.0/tcp/"
+  #podManagementPolicy: Parallel
+  #customChainspecUrl:
+
+substrateApiSidecar:
+  enabled: true
+  image:
+    repository: parity/substrate-api-sidecar
+    tag: latest
+  env: {}
+  resources: {}
+
+podAnnotations: {}
+
+nodeSelector: {}
+
+terminationGracePeriodSeconds: 60
+
+tolerations: []
+
+affinity: {}
+
+storageClass: "standard"

@@ -29,17 +29,17 @@ module "gcp-network" {
   }
 }
 module "gke" {
-  source                     = "terraform-google-modules/kubernetes-engine/google//modules/beta-public-cluster"
-  project_id                 = var.project_id
-  name                       = var.cluster_name
-  region                     = var.region
-  zones                      = ["europe-west3-a", "europe-west3-b", "europe-west3-c"]
-  network                    = module.gcp-network.network_name
-  subnetwork                 = module.gcp-network.subnets_names[0]
-  ip_range_pods              = var.ip_range_pods_name
-  ip_range_services          = var.ip_range_services_name
-  http_load_balancing        = true
-  initial_node_count         = 1
+  source              = "terraform-google-modules/kubernetes-engine/google//modules/beta-public-cluster"
+  project_id          = var.project_id
+  name                = var.cluster_name
+  region              = var.region
+  zones               = ["europe-west3-a", "europe-west3-b", "europe-west3-c"]
+  network             = module.gcp-network.network_name
+  subnetwork          = module.gcp-network.subnets_names[0]
+  ip_range_pods       = var.ip_range_pods_name
+  ip_range_services   = var.ip_range_services_name
+  http_load_balancing = true
+  initial_node_count  = 1
   depends_on = [
     module.gcp-network
   ]
@@ -58,7 +58,7 @@ module "gke" {
       service_account    = var.gcp-nodepool-service-account
       preemptible        = false
       initial_node_count = 0
-      ignore_changes =   "initial_node_count"
+
     },
   ]
 
@@ -105,8 +105,6 @@ module "gke" {
       "default-node-pool",
     ]
   }
-  
-
 
 }
 resource "kubernetes_namespace" "monitoring" {
@@ -128,17 +126,17 @@ resource "kubernetes_namespace" "monitoring" {
 
 resource "helm_release" "prometheus" {
   name       = "kube-prometheus-stack"
-  namespace = "monitoring"
+  namespace  = "monitoring"
   repository = "https://prometheus-community.github.io/helm-charts"
   chart      = "kube-prometheus-stack"
 
   values = [
-    file("${path.module}/nginx-values.yaml")
+    file("${path.module}/prometheus-values.yaml")
   ]
   depends_on = [
     module.gke,
     kubernetes_namespace.monitoring
-  ] 
+  ]
 }
 
 resource "kubernetes_namespace" "cert-manager" {
@@ -160,7 +158,7 @@ resource "kubernetes_namespace" "cert-manager" {
 
 resource "helm_release" "jetstack" {
   name       = "jetstack"
-  namespace = "cert-manager"
+  namespace  = "cert-manager"
   repository = "https://charts.jetstack.io"
   chart      = "cert-manager"
 
@@ -172,13 +170,13 @@ resource "helm_release" "jetstack" {
     value = true
   }
   set {
-    name = "prometheus.enabled"
+    name  = "prometheus.enabled"
     value = true
   }
   depends_on = [
     module.gke,
     kubernetes_namespace.cert-manager
-  ] 
+  ]
 }
 
 
@@ -202,7 +200,7 @@ resource "kubernetes_namespace" "nginx-ingress-controller" {
 
 resource "helm_release" "nginx" {
   name       = "ingress-nginx"
-  namespace = "nginx-ingress-controller"
+  namespace  = "nginx-ingress-controller"
   repository = "https://kubernetes.github.io/ingress-nginx"
   chart      = "ingress-nginx"
 
@@ -212,8 +210,9 @@ resource "helm_release" "nginx" {
   depends_on = [
     module.gke,
     kubernetes_namespace.nginx-ingress-controller
-  ] 
+  ]
 }
+
 
 resource "kubernetes_namespace" "polkadot-node" {
   metadata {
@@ -234,7 +233,7 @@ resource "kubernetes_namespace" "polkadot-node" {
 
 resource "helm_release" "polkadot-default-node" {
   name       = "polkadot-node"
-  namespace =  "polkadot-node"
+  namespace  = "polkadot-node"
   repository = "https://paritytech.github.io/helm-charts/"
   chart      = "node"
 
@@ -244,7 +243,7 @@ resource "helm_release" "polkadot-default-node" {
   depends_on = [
     helm_release.nginx,
     kubernetes_namespace.polkadot-node
-  ] 
+  ]
 }
 
 resource "kubernetes_namespace" "kusama-node" {
@@ -267,7 +266,7 @@ resource "kubernetes_namespace" "kusama-node" {
 
 resource "helm_release" "kusama-default-node" {
   name       = "kusama-node"
-  namespace = "kusama-node"
+  namespace  = "kusama-node"
   repository = "https://paritytech.github.io/helm-charts/"
   chart      = "node"
 
@@ -299,12 +298,12 @@ resource "kubernetes_namespace" "substrate-telemetry" {
 
 resource "helm_release" "substrate-telemetry" {
   name       = "substrate-telemetry"
-  namespace = "substrate-telemetry"
+  namespace  = "substrate-telemetry"
   repository = "https://paritytech.github.io/helm-charts/"
   chart      = "substrate-telemetry"
-# By default, the type of Kubernetes service used for Telemetry-Core, Telemetry-Shard and Telemetry-Frontend is ClusterIP, 
-# so they're not accessible from outside of the k8s cluster. 
-# Consider exposing all of the services using service of type LoadBalancer or using an ingress controller:
+  # By default, the type of Kubernetes service used for Telemetry-Core, Telemetry-Shard and Telemetry-Frontend is ClusterIP, 
+  # so they're not accessible from outside of the k8s cluster. 
+  # Consider exposing all of the services using service of type LoadBalancer or using an ingress controller:
   values = [
     file("${path.module}/substrate-telemetry-values.yaml")
   ]

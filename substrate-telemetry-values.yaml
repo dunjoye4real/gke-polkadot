@@ -31,7 +31,7 @@ envVars:
   frontend:
     # The frontend docker container makes this available to the UI,
     # so that it knows where to look for feed information:
-    SUBSTRATE_TELEMETRY_URL: "wss://core-service-domain.com"
+    SUBSTRATE_TELEMETRY_URL: "ws://<redacted>:80/feed"
 
 serviceMonitor:
   # Only core service has Prometheus metrics exposed at the moment.
@@ -70,17 +70,17 @@ service:
     port: 80
     targetPort: 8000
     annotations: {}
-    # nodePort: 31000
-    # externalTrafficPolicy: Cluster 
-    # sessionAffinity: None
+    nodePort: 31000
+    externalTrafficPolicy: Cluster 
+    sessionAffinity: None
   core:
     type: ClusterIP
     port: 80
     targetPort: 8000
     annotations: {}
-    # nodePort: 31000
-    # externalTrafficPolicy: Cluster 
-    # sessionAffinity: None
+    nodePort: 31000
+    externalTrafficPolicy: Cluster 
+    sessionAffinity: None
   frontend:
     type: ClusterIP
     port: 80
@@ -92,76 +92,124 @@ service:
 
 ingress:
   shard:
-    enabled: false
-    className: ""
-    annotations: {}
-    rules:
-      - host: shard.example.local
-        http:
-          paths:
-          - backend:
-              service:
-                name: telemetry-shard
-                port:
-                  number: 80
-            path: /submit
-            pathType: Exact
-          - backend:
-              service:
-                name: telemetry-shard
-                port:
-                  number: 80
-            path: /submit/
-            pathType: Exact
-    tls:
-      - secretName: shard.example.local
-        hosts:
-          - shard.example.local
-  core:
-    enabled: false
-    className: ""
-    annotations: {}
-    rules:
-      - host: feed.example.local
-        http:
-          paths:
-          - backend:
-              service:
-                name: telemetry-core
-                port:
-                  number: 80
-            path: /feed
-            pathType: Exact
-          - backend:
-              service:
-                name: telemetry-core
-                port:
-                  number: 80
-            path: /feed/
-            pathType: Exact
-    tls:
-      - secretName: feed.example.local
-        hosts:
-          - feed.example.local
-  frontend:
-    enabled: false
+    enabled: true
     className: ""
     annotations:
+      kubernetes.io/ingress.class: nginx
+      nginx.ingress.kubernetes.io/proxy-http-version: "1.1"
+      nginx.ingress.kubernetes.io/x-forwarded-prefix: "/submit"
+      nginx.ingress.kubernetes.io/proxy-buffering: "off"
+      nginx.ingress.kubernetes.io/connection-proxy-header: "Upgrade"
+      nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+      nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+      nginx.ingress.kubernetes.io/server-snippets: |
+        proxy_set_header Upgrade "websocket";
     rules:
-      - host: example.local
-        http:
-          paths:
-          - backend:
-              service:
-                name: telemetry-frontend
-                port:
-                  number: 80
-            path: /
-            pathType: Prefix
-    tls:
-      - secretName: example.local
-        hosts:
-          - example.local
+     - http:
+        paths:
+        - path: /submit
+          pathType: Exact
+          backend:
+            service:
+              name: telemetry-shard
+              port:
+                number: 80      
+    #   - host: shard.testchain.com
+    #   - http:
+    #       paths:
+    #       - backend:
+    #           service:
+    #             name: telemetry-shard
+    #             port:
+    #               number: 80
+    #         path: /submit
+    #         pathType: Exact
+    #       - backend:
+    #           service:
+    #             name: telemetry-shard
+    #             port:
+    #               number: 80
+    #         path: /submit
+    #         pathType: Exact
+    # tls:
+    #   - secretName: shard.testchain.com
+    #     hosts:
+    #       - shard.testchain.com
+  core:
+    enabled: true
+    className: ""
+    annotations:
+      kubernetes.io/ingress.class: nginx
+      nginx.ingress.kubernetes.io/proxy-http-version: "1.1"
+      nginx.ingress.kubernetes.io/x-forwarded-prefix: "/feed"
+      nginx.ingress.kubernetes.io/proxy-buffering: "off"
+      nginx.ingress.kubernetes.io/connection-proxy-header: "Upgrade"
+      nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+      nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+      nginx.ingress.kubernetes.io/server-snippets: |
+        proxy_set_header Upgrade $http_upgrade;
+    rules:
+     - http:
+        paths:
+        - path: /feed
+          pathType: Exact
+          backend:
+            service:
+              name: telemetry-core
+              port:
+                number: 80    
+    #   - host: core.testchain.com
+    #   - http:
+    #       paths:
+    #       - backend:
+    #           service:
+    #             name: telemetry-core
+    #             port:
+    #               number: 80
+    #         path: /feed
+    #         pathType: Exact
+    #       - backend:
+    #           service:
+    #             name: telemetry-core
+    #             port:
+    #               number: 80
+    #         path: /feed
+    #         pathType: Exact
+    # tls:
+    #   - secretName: core.testchain.com
+    #     hosts:
+    #       - core.testchain.com
+  frontend:
+    enabled: true
+    className: ""
+    annotations:
+      # nginx.ingress.kubernetes.io/rewrite-target: /
+      kubernetes.io/ingress.class: nginx
+    rules:
+     - http:
+        paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: telemetry-frontend
+              port:
+                number: 80
+       
+    #   - host: ui.testchain.com
+    #     http:
+    #       paths:
+    #       - backend:
+    #           service:
+    #             name: telemetry-frontend
+    #             port:
+    #               number: 80
+    #         path: /
+    #         pathType: Prefix
+    # tls:
+    #   - secretName: ui.testchain.com
+    #     hosts:
+    #       - ui.testchain.com
 
 
 resources:

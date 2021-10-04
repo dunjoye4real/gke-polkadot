@@ -1,6 +1,6 @@
 variable "project_id" {
   description = "The project ID to host the cluster in"
-  default = ""
+  default     = ""
 }
 
 variable "cluster_name" {
@@ -34,5 +34,5 @@ variable "ip_range_services_name" {
 }
 
 variable "gcp-nodepool-service-account" {
-  description = "GCP cluster and container resource service account" 
+  description = "GCP cluster and container resource service account"
 }

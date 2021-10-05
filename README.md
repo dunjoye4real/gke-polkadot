@@ -1,4 +1,8 @@
-# gke-polkadot
+## Use google cloud platform
+## create gcloud service account
+## Terraform manifest to provision GKE in a google virtual network
+## Terraform helm installas Polkadot and kusama node along with substate telemetry
 
-This Manifest Provisions Google kubernetes cluster,
-Packages are installed using terraform helm provider.
+## Terraform init
+## Terraform plan
+## Terraform apply

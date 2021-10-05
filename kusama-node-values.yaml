@@ -87,7 +87,7 @@ node:
     - "--rpc-external"
     - "--ws-external"
     - "--rpc-cors=all"
-    - "--telemetry-url=ws://34.141.24.67/submit 0"
+    - "--telemetry-url=ws://<redacted>/submit 0"
   keys: {}
   #  - type: "gran"
   #    scheme: "ed25519"

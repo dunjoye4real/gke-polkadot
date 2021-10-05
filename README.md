@@ -1,5 +1,3 @@
-# gke-polkadot
-
 ## Use google cloud platform
 ## create gcloud service account
 ## Terraform manifest to provision GKE in a google virtual network
